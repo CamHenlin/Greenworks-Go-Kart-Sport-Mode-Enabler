@@ -12,7 +12,7 @@ Essentially the strategy in creating this app, early on, was that I intended to 
 
 To run the Bluetooth Kart Controller application, follow these steps. Honestly, I don't know what step to stop at and retry connecting with the Greenworks "SMARTg home" app, and I am not able to put my kart in a state where it no longer works. So please feel free to retry before I did in my steps here and let me know what your findings are:
 
-- Ensure your Greenworks 60V Go Kart is powered on and in range for Bluetooth connectivity.
+- Ensure your Greenworks 60V Go Kart is powered on and in range for Bluetooth connectivity. The Bluetooth logo on the kart should be off for this app to connect.
 - Mac users: download "bluetoothkart.zip" from this repository. Unzip it and double click on the "bluetoothkart" terminal application.
 - Windows users will need to download via source code and run the application using node.js. I will provide an executable soon
 - The app will begin searching for the kart. It should eventually connect and will start cycling through commands that look like this:
@@ -21,8 +21,9 @@ To run the Bluetooth Kart Controller application, follow these steps. Honestly, 
 x/16777215:        input:55aa0603000a140127        read:0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 
 ```
 
+- NOTE: I kind of wonder if you could stop here and try connecting now. It is not harmful to kill the app and try the setup procedure with the Greenworks app.
 - eventually, the kart will disconnect. For me this took several hours. The bluetooth logo will disappear from the screen on the kart, and there will be a message stating "Disconnected from GLW".
-- Mine disconnected at 55aa0603000a78dd67, 55aa0603000a140127, 55aa0603000b9622cb
+- Mine disconnected at 55aa0603000a78dd67, 55aa0603000a140127, 55aa0603000b9622cb NOTE: I kind of wonder if you could stop after each one of these and try connecting. It is not harmful to kill the app and try the setup procedure with the Greenworks app.
 - After mine disconnected those 3 times, I redid the Greenworks procedure exactly: 
 - use the SMARTg app. I used an iphone 15 pro on latest iOS with latest app.
 - have the app on the add device page
