@@ -1,0 +1,18 @@
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# Project-specific files
+skiplist.json
+storedvalue.json
+services.json
+characteristics.json
+peripheral.json
+
+# Node.js and Editor Configurations
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn.lock
+package-lock.json

@@ -1,0 +1,21 @@
+{
+  "name": "bluetoothkart",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "bin": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@abandonware/noble": "^1.9.2-24",
+    "noble": "^1.9.1"
+  },
+  "pkg": {
+    "assets": [
+      "node_modules/@abandonware/noble/**/*"
+    ]
+  }
+}
