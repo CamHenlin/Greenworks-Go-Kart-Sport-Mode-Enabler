@@ -3,12 +3,6 @@ const noble = require('@abandonware/noble');
 const fs = require('fs');
 const util = require('util')
 
-let skipList = []
-// read the skipList from disk
-if (fs.existsSync('skiplist.json')) {
-    skipList = JSON.parse(fs.readFileSync('skiplist.json')).skipList
-}
-
 let foundTargetDevice = false
 
 const initialValue = 1
@@ -20,7 +14,7 @@ const MTU_SIZE = 247; // Maximum Transmission Unit, found in https://github.com/
 
 const writeCharacteristicUuid = '0000000100001001800100805f9b07d0'
 const readCharacteristicUuid =  '0000000300001001800100805f9b07d0'
-// const expectedPeripheralUuid = `cbf4e8e353ca8d8ccfa382d1c3ab1560` // I don't know if this should change for other go karts, not using for now because we can use "GLW" device name
+// const expectedPeripheralUuid = `cbf4e8e353ca8d8ccfa382d1c3ab1560` // I don't know if this should change for other go karts, not using for now because we can use "GLW" device name -- 20240617: confirmed that this changes kart to kart, do not use
 
 // Relevant Tuya command IDs for toggling a switch
 // from https://developer.tuya.com/en/docs/iot/tuya-cloud-universal-serial-port-access-protocol?id=K9eigf2el456o
@@ -111,26 +105,7 @@ function createTuyaCommand(commandId, data) {
 
 const skipActions = (peripheral) => {
 
-    if (skipList.includes(peripheral.id)) {
-        return true
-    }
-
-    if (foundTargetDevice) {
-        return true
-    }
-
-    //console.log('Found device:', peripheral.advertisement.localName);
-
     if (peripheral.advertisement.localName !== 'GWL') {
-
-        //console.log(peripheral)
-
-        console.log(`push ${peripheral.id} with ${peripheral.advertisement.localName} to skipList`)
-
-        skipList.push(peripheral.id)
-
-        // store the skipList on disk as skiplist.json
-        fs.writeFileSync('skiplist.json', JSON.stringify({skipList}, null, 2));
 
         return true
     }
@@ -263,15 +238,6 @@ async function sendHeartbeatCommand(peripheral, writeCharacteristic, readCharact
         console.log('Heartbeat command sent successfully');
     });
 
-    // Assuming response will be read from a notification/indication
-    // return new Promise((resolve) => {
-    //     writeCharacteristic.on('data', (data, isNotification) => {
-    //         handleHeartbeatResponse(data);
-    //         resolve();
-    //     });
-    // })
-
-
     let initialData = await readBufferValue(readCharacteristic)
 
     console.log('heartbeat after reading:', initialData.toString('hex'));
@@ -297,7 +263,7 @@ const peripheralConnectActions = (peripheral) => {
     })
 
     peripheral.once('servicesDiscover', (services) => {
-        console.log('Discovered services:', services);
+        // console.log('Discovered services:', services);
     })
 
     peripheral.once('includedServicesDiscover', (includedServiceUuids) => {
@@ -314,8 +280,8 @@ const peripheralConnectActions = (peripheral) => {
             return;
         }
 
-        fs.writeFileSync('services.json', util.inspect(services, { showHidden: false, depth: null }));
-        fs.writeFileSync('characteristics.json', util.inspect(characteristics, { showHidden: false, depth: null }));
+        // fs.writeFileSync('services.json', util.inspect(services, { showHidden: false, depth: null }));
+        // fs.writeFileSync('characteristics.json', util.inspect(characteristics, { showHidden: false, depth: null }));
 
         const writeCharacteristic = characteristics.find(c => c.uuid === writeCharacteristicUuid);
         const readCharacteristic = characteristics.find(c => c.uuid === readCharacteristicUuid);
@@ -334,9 +300,9 @@ const peripheralConnectActions = (peripheral) => {
             return;
         }
 
-        await sendHeartbeatCommand(peripheral, writeCharacteristic, readCharacteristic);
-        await getMCUInformation(peripheral, writeCharacteristic, readCharacteristic);
-        await requestWorkingMode(peripheral, writeCharacteristic, readCharacteristic);
+        // await sendHeartbeatCommand(peripheral, writeCharacteristic, readCharacteristic);
+        // await getMCUInformation(peripheral, writeCharacteristic, readCharacteristic);
+        // await requestWorkingMode(peripheral, writeCharacteristic, readCharacteristic);
 
         let initialData = await readBufferValue(readCharacteristic)
 
@@ -352,6 +318,7 @@ const peripheralConnectActions = (peripheral) => {
             }
         } catch (error) {
             console.log(`error reading stored value from filesystem: ${error}`)
+            console.log(`this error is ok and is likely due to the first time this program has been run. the file has been created.`)
         }
 
         // brute force sending commands to the device
@@ -408,31 +375,28 @@ const peripheralConnectActions = (peripheral) => {
 const targetDeviceActions = (peripheral) => {
 
     foundTargetDevice = true
-    console.log(`target device actions!`)
-    console.log(peripheral)
-    console.log(peripheral.advertisement)
+    console.log(`Found GreenWorks Go Kart (GWL) bluetooth controller`)
+    // console.log(peripheral)
+    // console.log(peripheral.advertisement)
 
     // use util.inspect to get the full peripheral object and write it to a file, without circular refs:
-    fs.writeFileSync('peripheral.json', util.inspect(peripheral, { showHidden: false, depth: null }));
+    // fs.writeFileSync('peripheral.json', util.inspect(peripheral, { showHidden: false, depth: null }));
 
-    // if (peripheral.uuid === expectedPeripheralUuid) {
+    noble.stopScanning();
+    console.log('Scan stopped. Target device has been found:', peripheral.advertisement.localName);
+    console.log(`connecting to go kart controller`)
 
-        noble.stopScanning();
-        console.log('Scan stopped. Target device has been found:', peripheral.advertisement.localName);
-        console.log(`connecting to peripheral`)
+    peripheral.connect((error) => {
 
-        peripheral.connect((error) => {
+        if (error) {
+            console.error('Error connecting to peripheral:', error);
+            return;
+        }
 
-            if (error) {
-                console.error('Error connecting to peripheral:', error);
-                return;
-            }
+        console.log(`connected to go kart successfully`)
 
-            console.log(`connected to peripheral`)
-
-            peripheralConnectActions(peripheral)
-        });
-    // }
+        peripheralConnectActions(peripheral)
+    });
 }
 
 const discoverPeripheral = (peripheral) => {
@@ -443,7 +407,7 @@ const discoverPeripheral = (peripheral) => {
     }
 
     try {
-        console.log(`discovered peripheral. running target device actions.`)
+        console.log(`Found Go Kart controller. Scan complete!`)
 
         targetDeviceActions(peripheral)
     } catch (error) {
@@ -451,10 +415,26 @@ const discoverPeripheral = (peripheral) => {
     }
 }
 
+const checkIfFoundTargetDeviceAndRestartScan = () => {
+
+    setTimeout(() => {
+
+        if (!foundTargetDevice) {
+
+            console.log(`Go kart controller not found during BLE scan. Is your go kart turned on and close to your computer? It should be no more than 20ft away with line of site. Restarting scan...`)
+            noble.stopScanning()
+            noble.startScanning()
+            checkIfFoundTargetDeviceAndRestartScan()
+        }
+    }, 60 * 1000) // if we didn't find it in a minute, start the scan over
+}
+
 noble.on('stateChange', (state) => {
     if (state === 'poweredOn') {
-        console.log('Starting BLE scan...');
+        console.log('Starting BLE scan for go kart...');
         noble.startScanning(); // Start scanning
+
+        checkIfFoundTargetDeviceAndRestartScan()
     } else {
         noble.stopScanning();
         console.log('Bluetooth not powered on');
